@@ -1,9 +1,9 @@
+use crate::schema::private;
 use diesel::{Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::schema::private;
 
-#[derive(Debug, Serialize, Deserialize, Clone, Default, Copy, diesel_derive_enum::DbEnum)]
+#[derive(Debug, Serialize, Deserialize, Default, Copy, Clone, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "private::sql_types::AccountType"]
 pub enum AccountType {
     #[default]
@@ -31,7 +31,9 @@ pub struct User {
     pub uuid: Uuid,
     pub username: String,
     pub name: String,
+    pub phone: String,
     pub password: String,
     pub email: String,
     pub role: AccountType,
+    pub active: bool,
 }

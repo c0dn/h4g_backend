@@ -1,0 +1,23 @@
+meta {
+  name: Login admin
+  type: http
+  seq: 5
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "super_admin",
+    "password": "password123"
+  }
+}
+
+vars:post-response {
+  access_token: res.body.access_token
+  refresh_token: res.body.refresh_token
+}

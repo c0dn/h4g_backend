@@ -3,7 +3,8 @@
 
 [print_schema]
 file = "src/schema.rs"
+schema = "private"
 custom_type_derives = ["diesel::query_builder::QueryId", "Clone"]
 
 [migrations_directory]
-dir = "E:\\hackthon_temp\\h4g_backend\\migrations"
+dir = "migrations"

@@ -1,24 +1,23 @@
-use std::sync::Arc;
+use crate::middleware::authentication_middleware;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::http::Method;
 use axum::Router;
-use axum_casbin::casbin::{CoreApi, DefaultModel, FileAdapter};
 use axum_casbin::casbin::function_map::key_match2;
+use axum_casbin::casbin::{CoreApi, DefaultModel, FileAdapter};
 use axum_casbin::CasbinAxumLayer;
 use diesel::Connection;
 use diesel_async::async_connection_wrapper::AsyncConnectionWrapper;
-use diesel_async::AsyncPgConnection;
-use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::pooled_connection::bb8::Pool;
+use diesel_async::pooled_connection::AsyncDieselConnectionManager;
+use diesel_async::AsyncPgConnection;
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use dotenvy::dotenv;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
 use log::{info, warn};
 use pasetors::keys::{AsymmetricKeyPair, Generate, SymmetricKey};
 use pasetors::paserk::FormatAsPaserk;
 use pasetors::version4::V4;
 use socketioxide::SocketIo;
+use std::sync::Arc;
 use tokio::fs;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
@@ -26,16 +25,17 @@ use tower_http::cors::CorsLayer;
 use tower_http::decompression::RequestDecompressionLayer;
 use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
-use crate::middleware::authentication_middleware;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
 
+mod endpoint;
+mod helper;
+mod middleware;
+mod models;
+mod paseto;
+mod req_res;
 mod schema;
 mod websocket;
-mod endpoint;
-mod req_res;
-mod middleware;
-mod helper;
-mod paseto;
-mod models;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
 
@@ -45,7 +45,6 @@ pub struct AppConfig {
     pub bind_address: String,
     pub database_url: String,
 }
-
 
 impl AppConfig {
     fn new() -> Self {
@@ -86,7 +85,6 @@ impl AppState {
         }
     }
 }
-
 
 async fn generate_keypair() {
     if fs::metadata("web_key.pem").await.is_ok() {
@@ -175,15 +173,16 @@ async fn main() -> anyhow::Result<()> {
     let service_layer = ServiceBuilder::new()
         .layer(trace_layer)
         .layer(axum::middleware::from_fn(authentication_middleware))
-        .layer(cas_layer)
         .layer(RequestDecompressionLayer::new())
         .layer(CompressionLayer::new())
         .layer(cors_layer)
+        .layer(cas_layer)
         .layer(normalise_path_layer);
 
     let app = Router::new()
         .nest("/auth", endpoint::auth::get_scope())
         .nest("/me", endpoint::me::get_scope())
+        .merge(endpoint::users::get_routes())
         .layer(ws_layer)
         .layer(service_layer)
         .with_state(app_state.clone());

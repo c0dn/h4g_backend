@@ -1,0 +1,19 @@
+meta {
+  name: Force reset
+  type: http
+  seq: 7
+}
+
+post {
+  url: https://h4g.homelan.cc/users/{{uuid}}/reset-password
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+vars:pre-request {
+  uuid: af1967ef-e354-4c4c-a362-49c75cceba99
+}

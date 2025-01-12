@@ -1050,6 +1050,7 @@ dependencies = [
  "log",
  "once_cell",
  "pasetors",
+ "rand",
  "regex",
  "serde",
  "socketioxide",

@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use crate::req_res::AppError;
 use crate::AppState;
 use axum::extract::State;
@@ -6,6 +5,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::routing::get;
 use axum::Router;
+use std::sync::Arc;
 
 pub fn get_scope() -> Router<Arc<AppState>> {
     Router::new().route("/settings", get(settings))

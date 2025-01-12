@@ -15,9 +15,11 @@ pub mod private {
             uuid -> Uuid,
             username -> Text,
             name -> Text,
+            phone -> Text,
             password -> Text,
             email -> Text,
             role -> AccountType,
+            active -> Bool,
         }
     }
 }

@@ -7,7 +7,11 @@ meta {
 post {
   url: https://h4g.homelan.cc/auth/refresh
   body: none
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{refresh_token}}
 }
 
 vars:post-response {

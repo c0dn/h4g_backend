@@ -1,0 +1,19 @@
+meta {
+  name: Delete user
+  type: http
+  seq: 4
+}
+
+delete {
+  url: https://h4g.homelan.cc/users/{{uuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+vars:pre-request {
+  uuid: eae3fe79-8262-4779-a05b-6dce9e4f22e5
+}

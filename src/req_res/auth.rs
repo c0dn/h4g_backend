@@ -1,12 +1,13 @@
-use crate::helper::hash_password;
-use crate::schema::private;
-use diesel::Insertable;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use crate::helper::hash_password_phone;
 use crate::models::user::{AccountType, User};
 use crate::paseto::{generate_access_token, generate_refresh_token};
 use crate::regex;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
+use crate::schema::private;
+use diesel::Insertable;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+use crate::schema::private::users::active;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserAuthRequest {
@@ -18,6 +19,7 @@ pub struct UserAuthRequest {
 pub struct AppInitRequest {
     pub username: String,
     pub email: String,
+    pub phone: String,
     pub name: String,
     pub password: String,
     pub confirm_password: String,
@@ -29,8 +31,10 @@ pub struct NewUser {
     pub username: String,
     pub email: String,
     pub name: String,
+    pub phone: String,
     pub password: String,
     pub role: AccountType,
+    pub active: bool
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -40,6 +44,7 @@ pub struct RedactedUser {
     pub name: String,
     pub email: String,
     pub role: AccountType,
+    pub active: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -67,21 +72,27 @@ impl NewTokens {
     }
 }
 
-impl Into<UserAuthenticationResponse> for User {
-    fn into(self) -> UserAuthenticationResponse {
-        let redacted = RedactedUser {
+impl Into<RedactedUser> for User {
+    fn into(self) -> RedactedUser {
+        RedactedUser {
             uuid: self.uuid.to_string(),
             username: self.username.clone(),
             name: self.name.clone(),
             email: self.email.clone(),
             role: self.role,
-        };
+            active: self.active,
+        }
+    }
+}
+
+impl Into<UserAuthenticationResponse> for User {
+    fn into(self) -> UserAuthenticationResponse {
         let access_token =
             generate_access_token(&self.uuid.to_string(), format!("{:?}", self.role).as_str());
         let refresh_token =
             generate_refresh_token(&self.uuid.to_string(), format!("{:?}", self.role).as_str());
         UserAuthenticationResponse {
-            user: redacted,
+            user: self.into(),
             access_token,
             refresh_token,
         }
@@ -107,13 +118,18 @@ impl TryInto<NewUser> for AppInitRequest {
         if self.password.len() < 10 {
             errors.push("Min password length 10".to_string());
         }
+        if self.phone.len() != 8 {
+            errors.push("Invalid Singapore phone number".to_string());
+        }
         if errors.is_empty() {
             Ok(NewUser {
                 username: self.username,
                 email: self.email,
                 name: self.name,
-                password: hash_password(&self.password)?,
+                phone: hash_password_phone(&self.phone)?,
+                password: hash_password_phone(&self.password)?,
                 role,
+                active: true
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

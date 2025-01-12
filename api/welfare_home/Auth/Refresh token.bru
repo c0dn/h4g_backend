@@ -1,0 +1,16 @@
+meta {
+  name: Refresh token
+  type: http
+  seq: 3
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/refresh
+  body: none
+  auth: none
+}
+
+vars:post-response {
+  refresh_token: res.body.refresh_token
+  access_token: res.body.access_token
+}

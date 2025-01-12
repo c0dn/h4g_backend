@@ -1,0 +1,26 @@
+meta {
+  name: Setup Request
+  type: http
+  seq: 2
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/init
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "test_user",
+    "email": "test@gmail.com",
+    "name": "William",
+    "password": "password123",
+    "confirm_password": "password123"
+  }
+}
+
+vars:post-response {
+  access_token: res.body.access_token
+  refresh_token: res.body.refresh_token
+}

@@ -175,15 +175,16 @@ async fn main() -> anyhow::Result<()> {
     let service_layer = ServiceBuilder::new()
         .layer(trace_layer)
         .layer(axum::middleware::from_fn(authentication_middleware))
-        .layer(cas_layer)
         .layer(RequestDecompressionLayer::new())
         .layer(CompressionLayer::new())
         .layer(cors_layer)
+        .layer(cas_layer)
         .layer(normalise_path_layer);
 
     let app = Router::new()
         .nest("/auth", endpoint::auth::get_scope())
         .nest("/me", endpoint::me::get_scope())
+        .merge(endpoint::users::get_routes())
         .layer(ws_layer)
         .layer(service_layer)
         .with_state(app_state.clone());

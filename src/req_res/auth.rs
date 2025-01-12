@@ -1,4 +1,4 @@
-use crate::helper::hash_password;
+use crate::helper::hash_password_phone;
 use crate::schema::private;
 use diesel::Insertable;
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,7 @@ pub struct UserAuthRequest {
 pub struct AppInitRequest {
     pub username: String,
     pub email: String,
+    pub phone: String,
     pub name: String,
     pub password: String,
     pub confirm_password: String,
@@ -29,6 +30,7 @@ pub struct NewUser {
     pub username: String,
     pub email: String,
     pub name: String,
+    pub phone: String,
     pub password: String,
     pub role: AccountType,
 }
@@ -104,15 +106,20 @@ impl TryInto<NewUser> for AppInitRequest {
         if self.password != self.confirm_password {
             errors.push("Passwords do not match".to_string());
         }
+        println!("{}", &self.password);
         if self.password.len() < 10 {
             errors.push("Min password length 10".to_string());
+        }
+        if self.phone.len() != 8 {
+            errors.push("Invalid Singapore phone number".to_string());
         }
         if errors.is_empty() {
             Ok(NewUser {
                 username: self.username,
                 email: self.email,
                 name: self.name,
-                password: hash_password(&self.password)?,
+                phone: hash_password_phone(&self.phone)?,
+                password: hash_password_phone(&self.password)?,
                 role,
             })
         } else {

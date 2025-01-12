@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::helper::{is_bad_mail, validate_token, verify_password};
+use crate::helper::{is_bad_mail, validate_token, verify_password_phone};
 use crate::req_res::auth::{
     AppInitRequest, NewTokens, NewUser, UserAuthRequest, UserAuthenticationResponse,
 };
@@ -43,7 +43,7 @@ async fn login(
 
     match user_result {
         Ok(user) => {
-            verify_password(&user.password, &payload.password)?;
+            verify_password_phone(&user.password, &payload.password)?;
             let res: UserAuthenticationResponse = user.into();
             Ok((StatusCode::OK, Json(res)))
         }

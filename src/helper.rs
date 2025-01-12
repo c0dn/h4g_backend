@@ -7,6 +7,7 @@ use pasetors::keys::AsymmetricPublicKey;
 use pasetors::{public, Public};
 use pasetors::token::UntrustedToken;
 use pasetors::version4::V4;
+use rand::{thread_rng, Rng};
 use trust_dns_resolver::AsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::proto::rr::RecordType;
@@ -26,7 +27,7 @@ pub fn validate_token(token: &str) -> Option<(String, Claims)> {
 }
 
 
-pub fn hash_password(password: &str) -> Result<String, AppError> {
+pub fn hash_password_phone(password: &str) -> Result<String, AppError> {
     // Reference https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Password_Storage_Cheat_Sheet.md#argon2id
     let parameters = Params::new(19456, 2, 1, None).unwrap();
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, parameters);
@@ -41,13 +42,20 @@ pub fn hash_password(password: &str) -> Result<String, AppError> {
     Ok(password_hash)
 }
 
-pub fn verify_password(hash: &str, password: &str) -> Result<(), AppError> {
+pub fn verify_password_phone(hash: &str, password: &str) -> Result<(), AppError> {
     let parsed_hash = PasswordHash::new(&hash).map_err(|_| AppError::unauthorized())?;
     Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)
         .map_err(|_| AppError::unauthorized())
 }
 
+pub fn generate_random_string() -> String {
+    const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let mut rng = thread_rng();
+    (0..10)
+        .map(|_| CHARSET[rng.gen_range(0..CHARSET.len())] as char)
+        .collect()
+}
 
 pub async fn is_bad_mail(email: &str) -> bool {
     let re = regex!(r"^[\w.-]+@[a-zA-Z\d.-]+\.[a-zA-Z]{2,}$");

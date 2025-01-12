@@ -16,6 +16,7 @@ pub mod private {
             username -> Text,
             name -> Text,
             password -> Text,
+            phone -> Text,
             email -> Text,
             role -> AccountType,
         }

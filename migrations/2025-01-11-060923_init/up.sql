@@ -9,6 +9,7 @@ CREATE TABLE private.users (
     username TEXT NOT NULL,
     name TEXT NOT NULL,
     password TEXT NOT NULL,
+    phone TEXT NOT NULL,
     email TEXT NOT NULL,
     role private.account_type NOT NULL
 );

@@ -1,13 +1,12 @@
 use crate::helper::hash_password_phone;
-use crate::schema::private;
-use diesel::{AsChangeset, Insertable};
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use crate::models::user::{AccountType, User};
 use crate::paseto::{generate_access_token, generate_refresh_token};
 use crate::regex;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
-
+use crate::schema::private;
+use diesel::{AsChangeset, Insertable};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, AsChangeset)]
 #[diesel(table_name = private::users)]

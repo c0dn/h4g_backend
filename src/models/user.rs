@@ -1,7 +1,7 @@
+use crate::schema::private;
 use diesel::{Queryable, Selectable};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::schema::private;
 
 #[derive(Debug, Serialize, Deserialize, Default, Copy, Clone, diesel_derive_enum::DbEnum)]
 #[ExistingTypePath = "private::sql_types::AccountType"]

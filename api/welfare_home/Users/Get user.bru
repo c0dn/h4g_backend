@@ -1,0 +1,19 @@
+meta {
+  name: Get user
+  type: http
+  seq: 3
+}
+
+get {
+  url: https://h4g.homelan.cc/users/{{uuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+vars:pre-request {
+  uuid: 7522602b-16f2-4f0e-8ada-8908dd0c3b8c
+}

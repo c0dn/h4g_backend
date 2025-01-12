@@ -1,0 +1,23 @@
+meta {
+  name: Login user
+  type: http
+  seq: 6
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "username": "user1",
+    "password": "slZdyjCP4J"
+  }
+}
+
+vars:post-response {
+  access_token: res.body.access_token
+  refresh_token: res.body.refresh_token
+}

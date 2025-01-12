@@ -1,6 +1,11 @@
+use crate::helper::{generate_random_string, hash_password_phone};
 use crate::models::user::User;
+use crate::req_res::auth::{NewUser, RedactedUser};
+use crate::req_res::me::UpdateUser;
+use crate::req_res::users::{AdminNewUserReq, AdminUpdateUserReq};
 use crate::req_res::AppError;
 use crate::schema::private;
+use crate::schema::private::users::uuid as SqlUuid;
 use crate::AppState;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -10,13 +15,11 @@ use axum::{Extension, Json, Router};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
-use std::sync::Arc;
 use pasetors::claims::Claims;
-use crate::req_res::auth::NewUser;
-use crate::req_res::me::UpdateUser;
-use crate::req_res::users::{AdminNewUserReq, AdminUpdateUserReq};
-use crate::schema::private::users::uuid as SqlUuid;
+use std::sync::Arc;
+use log::error;
 use uuid::Uuid;
+use crate::paseto::AuthTokenClaims;
 
 pub fn get_routes() -> Router<Arc<AppState>> {
     Router::new().nest(
@@ -36,7 +39,12 @@ async fn get_users(State(state): State<Arc<AppState>>) -> Result<impl IntoRespon
         .await
         .map_err(AppError::from)?;
 
-    Ok((StatusCode::OK, Json(users_vec)))
+    let redacted_vec = users_vec
+        .into_iter()
+        .map(|u| u.into())
+        .collect::<Vec<RedactedUser>>();
+
+    Ok((StatusCode::OK, Json(redacted_vec)))
 }
 
 async fn get_user(
@@ -49,9 +57,12 @@ async fn get_user(
         .filter(SqlUuid.eq(uid))
         .first::<User>(&mut con)
         .await
-        .map_err(AppError::from)?;
+        .optional()
+        .map_err(AppError::from)?
+        .ok_or_else(|| AppError::not_found())?;
+    let redacted: RedactedUser = user.into();
 
-    Ok((StatusCode::OK, Json(user)))
+    Ok((StatusCode::OK, Json(redacted)))
 }
 
 async fn create_user(
@@ -60,14 +71,18 @@ async fn create_user(
 ) -> Result<impl IntoResponse, AppError> {
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
-    let n_user: NewUser = payload.try_into()?;
+    let mut n_user: NewUser = payload.try_into()?;
+    let random_password = generate_random_string();
+    n_user.password = hash_password_phone(&random_password)?;
     let created_user = diesel::insert_into(private::users::table)
         .values(&n_user)
         .get_result::<User>(&mut con)
         .await
         .map_err(AppError::from)?;
-
-    Ok((StatusCode::CREATED, Json(created_user)))
+    let redacted: RedactedUser = created_user.into();
+    //TODO: Send generated password via mail or text
+    println!("created password: {}", random_password);
+    Ok((StatusCode::CREATED, Json(redacted)))
 }
 
 async fn update_user(
@@ -84,20 +99,37 @@ async fn update_user(
         .set(&update_user)
         .get_result::<User>(&mut con)
         .await
-        .map_err(AppError::from)?;
-    Ok((StatusCode::OK, Json(user)))
+        .optional()
+        .map_err(AppError::from)?
+        .ok_or_else(|| AppError::not_found())?;
+    let redacted: RedactedUser = user.into();
+    Ok((StatusCode::OK, Json(redacted)))
 }
 async fn delete_user(
     State(state): State<Arc<AppState>>,
     Path(uid): Path<Uuid>,
-    Extension(claims): Extension<Option<Claims>>,
+    Extension(c): Extension<Option<Claims>>,
 ) -> Result<impl IntoResponse, AppError> {
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
-    diesel::delete(private::users::table.find(uid))
+    let claims = c.ok_or_else(AppError::unauthorized)?;
+    let claims = AuthTokenClaims::try_from(&claims).map_err(|err| {
+        error!("Error parsing claims {}", err);
+        AppError::unauthorized()
+    })?;
+
+    if claims.user_uid == uid {
+        return Err(AppError::bad_request(None));
+    }
+
+    let deleted_count = diesel::delete(private::users::table.find(uid))
         .execute(&mut con)
         .await
         .map_err(AppError::from)?;
+
+    if deleted_count == 0 {
+        return Err(AppError::not_found());
+    }
 
     Ok(StatusCode::NO_CONTENT)
 }

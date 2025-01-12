@@ -1,12 +1,12 @@
 use crate::helper::hash_password_phone;
-use crate::schema::private;
-use diesel::Insertable;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 use crate::models::user::{AccountType, User};
 use crate::paseto::{generate_access_token, generate_refresh_token};
 use crate::regex;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
+use crate::schema::private;
+use diesel::Insertable;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserAuthRequest {
@@ -69,21 +69,26 @@ impl NewTokens {
     }
 }
 
-impl Into<UserAuthenticationResponse> for User {
-    fn into(self) -> UserAuthenticationResponse {
-        let redacted = RedactedUser {
+impl Into<RedactedUser> for User {
+    fn into(self) -> RedactedUser {
+        RedactedUser {
             uuid: self.uuid.to_string(),
             username: self.username.clone(),
             name: self.name.clone(),
             email: self.email.clone(),
             role: self.role,
-        };
+        }
+    }
+}
+
+impl Into<UserAuthenticationResponse> for User {
+    fn into(self) -> UserAuthenticationResponse {
         let access_token =
             generate_access_token(&self.uuid.to_string(), format!("{:?}", self.role).as_str());
         let refresh_token =
             generate_refresh_token(&self.uuid.to_string(), format!("{:?}", self.role).as_str());
         UserAuthenticationResponse {
-            user: redacted,
+            user: self.into(),
             access_token,
             refresh_token,
         }
@@ -106,7 +111,6 @@ impl TryInto<NewUser> for AppInitRequest {
         if self.password != self.confirm_password {
             errors.push("Passwords do not match".to_string());
         }
-        println!("{}", &self.password);
         if self.password.len() < 10 {
             errors.push("Min password length 10".to_string());
         }

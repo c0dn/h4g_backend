@@ -1,9 +1,12 @@
-use std::sync::Arc;
 use crate::helper::{is_bad_mail, validate_token, verify_password_phone};
+use crate::models::user::User;
+use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{
     AppInitRequest, NewTokens, NewUser, UserAuthRequest, UserAuthenticationResponse,
 };
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
+use crate::schema::private::users::dsl::users;
+use crate::schema::private::users::username;
 use crate::AppState;
 use axum::extract::State;
 use axum::http::StatusCode;
@@ -17,10 +20,7 @@ use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel_async::RunQueryDsl;
-use crate::models::user::User;
-use crate::paseto::AuthTokenClaims;
-use crate::schema::private::users::dsl::users;
-use crate::schema::private::users::username;
+use std::sync::Arc;
 
 pub fn get_scope() -> Router<Arc<AppState>> {
     Router::new()
@@ -47,16 +47,16 @@ async fn login(
             let res: UserAuthenticationResponse = user.into();
             Ok((StatusCode::OK, Json(res)))
         }
-        Err(e) => {
-            match e {
-                Error::NotFound => Err(AppError::unauthorized()),
-                _ => Err(AppError::from(e))
-            }
-        }
+        Err(e) => match e {
+            Error::NotFound => Err(AppError::unauthorized()),
+            _ => Err(AppError::from(e)),
+        },
     }
 }
 
-async fn check_init_state(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse, AppError> {
+async fn check_init_state(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, AppError> {
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
     let user_count: i64 = users::table().count().get_result(&mut con).await?;

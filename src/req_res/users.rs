@@ -1,10 +1,10 @@
 use crate::helper::{generate_random_string, hash_password_phone};
 use crate::models::user::AccountType;
 use crate::regex;
-use crate::req_res::auth::NewUser;
+use crate::req_res::auth::{NewUser, RedactedUser};
+use crate::req_res::me::UpdateUser;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
 use serde::Deserialize;
-use crate::req_res::me::UpdateUser;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AdminNewUserReq {
@@ -15,7 +15,6 @@ pub struct AdminNewUserReq {
     pub role: AccountType,
 }
 
-
 #[derive(Debug, Deserialize, Clone)]
 pub struct AdminUpdateUserReq {
     pub username: Option<String>,
@@ -24,7 +23,6 @@ pub struct AdminUpdateUserReq {
     pub phone: Option<String>,
     pub role: Option<AccountType>,
 }
-
 
 impl TryInto<NewUser> for AdminNewUserReq {
     type Error = AppError;
@@ -38,16 +36,15 @@ impl TryInto<NewUser> for AdminNewUserReq {
         if !re.is_match(&self.username) {
             errors.push("Username can only contain numbers, letters, and underscores".to_string());
         }
-        if !self.phone.len() != 8 {
+        if self.phone.len() != 8 {
             errors.push("Invalid Singapore phone number".to_string());
         }
-        let random_password = generate_random_string();
         if errors.is_empty() {
             Ok(NewUser {
                 username: self.username,
                 email: self.email,
                 name: self.name,
-                password: hash_password_phone(&random_password)?,
+                password: hash_password_phone("placeholder")?,
                 phone: hash_password_phone(&self.phone)?,
                 role: self.role,
             })
@@ -58,7 +55,6 @@ impl TryInto<NewUser> for AdminNewUserReq {
         }
     }
 }
-
 
 impl TryInto<UpdateUser> for AdminUpdateUserReq {
     type Error = AppError;
@@ -72,7 +68,9 @@ impl TryInto<UpdateUser> for AdminUpdateUserReq {
                 errors.push("Username too short".to_string());
             }
             if !re.is_match(username) {
-                errors.push("Username can only contain numbers, letters, and underscores".to_string());
+                errors.push(
+                    "Username can only contain numbers, letters, and underscores".to_string(),
+                );
             }
         }
 

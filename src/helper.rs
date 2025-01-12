@@ -1,19 +1,19 @@
-use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version};
-use argon2::password_hash::rand_core::OsRng;
-use argon2::password_hash::SaltString;
-use log::{debug, error};
-use pasetors::claims::{Claims, ClaimsValidationRules};
-use pasetors::keys::AsymmetricPublicKey;
-use pasetors::{public, Public};
-use pasetors::token::UntrustedToken;
-use pasetors::version4::V4;
-use rand::{thread_rng, Rng};
-use trust_dns_resolver::AsyncResolver;
-use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
-use trust_dns_resolver::proto::rr::RecordType;
 use crate::paseto::get_private_public_keypair;
 use crate::regex;
 use crate::req_res::AppError;
+use argon2::password_hash::rand_core::OsRng;
+use argon2::password_hash::SaltString;
+use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version};
+use log::{debug, error};
+use pasetors::claims::{Claims, ClaimsValidationRules};
+use pasetors::keys::AsymmetricPublicKey;
+use pasetors::token::UntrustedToken;
+use pasetors::version4::V4;
+use pasetors::{public, Public};
+use rand::{thread_rng, Rng};
+use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
+use trust_dns_resolver::proto::rr::RecordType;
+use trust_dns_resolver::AsyncResolver;
 
 pub fn validate_token(token: &str) -> Option<(String, Claims)> {
     let (_, public_key) = get_private_public_keypair();
@@ -25,7 +25,6 @@ pub fn validate_token(token: &str) -> Option<(String, Claims)> {
     let role = claims.get_claim("role")?.as_str()?;
     Some((role.to_string(), claims.clone()))
 }
-
 
 pub fn hash_password_phone(password: &str) -> Result<String, AppError> {
     // Reference https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Password_Storage_Cheat_Sheet.md#argon2id
@@ -134,7 +133,6 @@ pub async fn is_bad_mail(email: &str) -> bool {
         true
     }
 }
-
 
 #[macro_export]
 macro_rules! regex {

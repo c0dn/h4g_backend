@@ -7,6 +7,7 @@ use crate::schema::private;
 use diesel::Insertable;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use crate::schema::private::users::active;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserAuthRequest {
@@ -33,6 +34,7 @@ pub struct NewUser {
     pub phone: String,
     pub password: String,
     pub role: AccountType,
+    pub active: bool
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -42,6 +44,7 @@ pub struct RedactedUser {
     pub name: String,
     pub email: String,
     pub role: AccountType,
+    pub active: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -77,6 +80,7 @@ impl Into<RedactedUser> for User {
             name: self.name.clone(),
             email: self.email.clone(),
             role: self.role,
+            active: self.active,
         }
     }
 }
@@ -125,6 +129,7 @@ impl TryInto<NewUser> for AppInitRequest {
                 phone: hash_password_phone(&self.phone)?,
                 password: hash_password_phone(&self.password)?,
                 role,
+                active: true
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

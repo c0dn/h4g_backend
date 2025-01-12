@@ -10,7 +10,7 @@ use crate::AppState;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::{Extension, Json, Router};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
@@ -26,7 +26,10 @@ pub fn get_routes() -> Router<Arc<AppState>> {
         "/users/",
         Router::new()
             .route("/", get(get_users).post(create_user))
-            .route("/{id}", get(get_user).put(update_user).delete(delete_user)),
+            .route("/{id}", get(get_user).put(update_user).delete(delete_user))
+            .route("/{id}/suspend", post(suspend_user))
+            .route("/{id}/activate", post(unsuspend_user))
+            .route("/{id}/reset-password", post(reset_password)),
     )
 }
 
@@ -132,4 +135,99 @@ async fn delete_user(
     }
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn reset_password(
+    State(state): State<Arc<AppState>>,
+    Path(uid): Path<Uuid>,
+    Extension(c): Extension<Option<Claims>>,
+) -> Result<impl IntoResponse, AppError> {
+    let pool = &state.postgres_pool;
+    let mut con = pool.get().await?;
+    let claims = c.ok_or_else(AppError::unauthorized)?;
+    let claims = AuthTokenClaims::try_from(&claims).map_err(|err| {
+        error!("Error parsing claims {}", err);
+        AppError::unauthorized()
+    })?;
+
+    if claims.user_uid == uid {
+        return Err(AppError::bad_request(None));
+    }
+
+    let random_password = generate_random_string();
+    let hashed_password = hash_password_phone(&random_password)?;
+
+    let user = diesel::update(private::users::table)
+        .filter(SqlUuid.eq(uid))
+        .set(private::users::password.eq(hashed_password))
+        .get_result::<User>(&mut con)
+        .await
+        .optional()
+        .map_err(AppError::from)?
+        .ok_or_else(|| AppError::not_found())?;
+
+    //TODO: Send new password via email or text
+    println!("New password: {}", random_password);
+
+    Ok(StatusCode::OK)
+}
+
+
+async fn suspend_user(
+    State(state): State<Arc<AppState>>,
+    Path(uid): Path<Uuid>,
+    Extension(c): Extension<Option<Claims>>,
+) -> Result<impl IntoResponse, AppError> {
+    let pool = &state.postgres_pool;
+    let mut con = pool.get().await?;
+    let claims = c.ok_or_else(AppError::unauthorized)?;
+    let claims = AuthTokenClaims::try_from(&claims).map_err(|err| {
+        error!("Error parsing claims {}", err);
+        AppError::unauthorized()
+    })?;
+
+    if claims.user_uid == uid {
+        return Err(AppError::bad_request(None));
+    }
+
+    diesel::update(private::users::table)
+        .filter(SqlUuid.eq(uid))
+        .set(private::users::active.eq(false))
+        .get_result::<User>(&mut con)
+        .await
+        .optional()
+        .map_err(AppError::from)?
+        .ok_or_else(|| AppError::not_found())?;
+
+    Ok((StatusCode::OK, ()))
+}
+
+
+async fn unsuspend_user(
+    State(state): State<Arc<AppState>>,
+    Path(uid): Path<Uuid>,
+    Extension(c): Extension<Option<Claims>>,
+) -> Result<impl IntoResponse, AppError> {
+    let pool = &state.postgres_pool;
+    let mut con = pool.get().await?;
+    let claims = c.ok_or_else(AppError::unauthorized)?;
+    let claims = AuthTokenClaims::try_from(&claims).map_err(|err| {
+        error!("Error parsing claims {}", err);
+        AppError::unauthorized()
+    })?;
+
+    if claims.user_uid == uid {
+        return Err(AppError::bad_request(None));
+    }
+
+    diesel::update(private::users::table)
+        .filter(SqlUuid.eq(uid))
+        .set(private::users::active.eq(true))
+        .get_result::<User>(&mut con)
+        .await
+        .optional()
+        .map_err(AppError::from)?
+        .ok_or_else(|| AppError::not_found())?;
+
+    Ok((StatusCode::OK, ()))
 }

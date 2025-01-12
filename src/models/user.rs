@@ -35,4 +35,5 @@ pub struct User {
     pub password: String,
     pub email: String,
     pub role: AccountType,
+    pub active: bool,
 }

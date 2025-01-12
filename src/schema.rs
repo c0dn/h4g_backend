@@ -19,6 +19,7 @@ pub mod private {
             password -> Text,
             email -> Text,
             role -> AccountType,
+            active -> Bool,
         }
     }
 }

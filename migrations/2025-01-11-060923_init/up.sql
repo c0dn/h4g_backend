@@ -11,7 +11,8 @@ CREATE TABLE private.users (
     phone TEXT NOT NULL,
     password TEXT NOT NULL,
     email TEXT NOT NULL,
-    role private.account_type NOT NULL
+    role private.account_type NOT NULL,
+    active BOOL NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_users_username ON private.users (username);

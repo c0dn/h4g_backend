@@ -1,7 +1,7 @@
-use crate::helper::{generate_random_string, hash_password_phone};
+use crate::helper::hash_password_phone;
 use crate::models::user::AccountType;
 use crate::regex;
-use crate::req_res::auth::{NewUser, RedactedUser};
+use crate::req_res::auth::NewUser;
 use crate::req_res::me::UpdateUser;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
 use serde::Deserialize;
@@ -47,6 +47,7 @@ impl TryInto<NewUser> for AdminNewUserReq {
                 password: hash_password_phone("placeholder")?,
                 phone: hash_password_phone(&self.phone)?,
                 role: self.role,
+                active: true,
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

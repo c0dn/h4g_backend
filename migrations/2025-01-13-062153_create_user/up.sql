@@ -9,7 +9,8 @@ CREATE TABLE private.users (
     password TEXT NOT NULL,
     email TEXT NOT NULL,
     role private.account_type NOT NULL,
-    active BOOL NOT NULL
+    active BOOL NOT NULL,
+    idx_phone TEXT NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_users_username ON private.users (username);

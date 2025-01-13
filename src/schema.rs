@@ -20,6 +20,7 @@ pub mod private {
             email -> Text,
             role -> AccountType,
             active -> Bool,
+            idx_phone -> Text,
         }
     }
 }

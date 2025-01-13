@@ -1,4 +1,4 @@
-use crate::helper::hash_password_phone;
+use crate::helper::{get_searchable_hash, hash_password_phone};
 use crate::models::user::AccountType;
 use crate::regex;
 use crate::req_res::auth::NewUser;
@@ -48,6 +48,7 @@ impl TryInto<NewUser> for AdminNewUserReq {
                 phone: hash_password_phone(&self.phone)?,
                 role: self.role,
                 active: true,
+                idx_phone: get_searchable_hash(&self.phone),
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(
@@ -86,8 +87,12 @@ impl TryInto<UpdateUser> for AdminUpdateUserReq {
                 username: self.username,
                 email: self.email,
                 name: self.name,
-                phone: self.phone.map(|p| hash_password_phone(&p)).transpose()?,
+                phone: match self.phone {
+                    Some(ref p) => Some(hash_password_phone(p)?),
+                    None => None,
+                },
                 role: self.role,
+                idx_phone: self.phone.as_ref().map(|p| get_searchable_hash(p)),
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

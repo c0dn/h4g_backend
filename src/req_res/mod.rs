@@ -105,14 +105,21 @@ impl IntoResponse for AppError {
 
 impl From<Error> for AppError {
     fn from(v: Error) -> Self {
-        error!("{}", v.to_string());
+        error!("Diesel: {}", v.to_string());
         Self::internal_error("DB error".to_string())
+    }
+}
+
+impl From<fred::error::Error> for AppError {
+    fn from(value: fred::error::Error) -> Self {
+        error!("Redis: {}", value.to_string());
+        Self::internal_error("Redis error".to_string())
     }
 }
 
 impl From<RunError> for AppError {
     fn from(v: RunError) -> Self {
-        error!("{}", v.to_string());
+        error!("Diesel: {}", v.to_string());
         Self::internal_error("DB error".to_string())
     }
 }

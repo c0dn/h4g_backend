@@ -36,4 +36,5 @@ pub struct User {
     pub email: String,
     pub role: AccountType,
     pub active: bool,
+    pub idx_phone: String,
 }

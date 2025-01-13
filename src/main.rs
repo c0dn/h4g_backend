@@ -28,6 +28,7 @@ use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+mod backend;
 mod endpoint;
 mod helper;
 mod middleware;
@@ -35,6 +36,7 @@ mod models;
 mod paseto;
 mod req_res;
 mod schema;
+mod utils;
 mod websocket;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
@@ -68,6 +70,7 @@ impl AppConfig {
 #[derive(Clone)]
 pub struct AppState {
     pub postgres_pool: Pool<AsyncPgConnection>,
+    pub redis_client: fred::clients::Client,
     pub config: AppConfig,
 }
 
@@ -79,8 +82,10 @@ impl AppState {
             .build(db_config)
             .await
             .expect("Unable to create Postgres connection pool");
+        let redis_client = utils::build_redis_client().await;
         AppState {
             postgres_pool: pool,
+            redis_client,
             config: app_config,
         }
     }

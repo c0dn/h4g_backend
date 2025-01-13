@@ -1,11 +1,13 @@
-use crate::helper::{generate_random_string, hash_password_phone};
+use crate::helper::hash_password_phone;
 use crate::models::user::User;
+use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{NewUser, RedactedUser};
 use crate::req_res::me::UpdateUser;
 use crate::req_res::users::{AdminNewUserReq, AdminUpdateUserReq};
 use crate::req_res::AppError;
 use crate::schema::private;
 use crate::schema::private::users::uuid as SqlUuid;
+use crate::utils::generate_random_string;
 use crate::AppState;
 use axum::extract::{Path, State};
 use axum::http::StatusCode;
@@ -15,11 +17,10 @@ use axum::{Extension, Json, Router};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel_async::RunQueryDsl;
+use log::error;
 use pasetors::claims::Claims;
 use std::sync::Arc;
-use log::error;
 use uuid::Uuid;
-use crate::paseto::AuthTokenClaims;
 
 pub fn get_routes() -> Router<Arc<AppState>> {
     Router::new().nest(
@@ -172,7 +173,6 @@ async fn reset_password(
     Ok(StatusCode::OK)
 }
 
-
 async fn suspend_user(
     State(state): State<Arc<AppState>>,
     Path(uid): Path<Uuid>,
@@ -201,7 +201,6 @@ async fn suspend_user(
 
     Ok((StatusCode::OK, ()))
 }
-
 
 async fn unsuspend_user(
     State(state): State<Arc<AppState>>,

@@ -11,6 +11,7 @@ use pasetors::token::UntrustedToken;
 use pasetors::version4::V4;
 use pasetors::{public, Public};
 use rand::{thread_rng, Rng};
+use sha2::{Digest, Sha256};
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::proto::rr::RecordType;
 use trust_dns_resolver::AsyncResolver;
@@ -41,19 +42,19 @@ pub fn hash_password_phone(password: &str) -> Result<String, AppError> {
     Ok(password_hash)
 }
 
+pub fn get_searchable_hash(payload: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(payload.as_bytes());
+    let result = hasher.finalize();
+    let hex = format!("{:x}", result);
+    hex.chars().skip(hex.len() - 8).collect()
+}
+
 pub fn verify_password_phone(hash: &str, password: &str) -> Result<(), AppError> {
     let parsed_hash = PasswordHash::new(&hash).map_err(|_| AppError::unauthorized())?;
     Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)
         .map_err(|_| AppError::unauthorized())
-}
-
-pub fn generate_random_string() -> String {
-    const CHARSET: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let mut rng = thread_rng();
-    (0..10)
-        .map(|_| CHARSET[rng.gen_range(0..CHARSET.len())] as char)
-        .collect()
 }
 
 pub async fn is_bad_mail(email: &str) -> bool {
@@ -132,12 +133,4 @@ pub async fn is_bad_mail(email: &str) -> bool {
     } else {
         true
     }
-}
-
-#[macro_export]
-macro_rules! regex {
-    ($re:literal $(,)?) => {{
-        static RE: once_cell::sync::OnceCell<regex::Regex> = once_cell::sync::OnceCell::new();
-        RE.get_or_init(|| regex::Regex::new($re).unwrap())
-    }};
 }

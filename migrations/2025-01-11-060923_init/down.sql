@@ -1,3 +1,3 @@
 -- This file should undo anything in `up.sql`
-DROP table private.users;
-DROP TYPE private.account_type;
+REVOKE ALL PRIVILEGES ON SCHEMA private FROM "testuser";
+DROP SCHEMA IF EXISTS private CASCADE;

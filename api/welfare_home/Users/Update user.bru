@@ -1,0 +1,30 @@
+meta {
+  name: Update user
+  type: http
+  seq: 5
+}
+
+patch {
+  url: https://h4g.homelan.cc/users/{{uuid}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "name": "Dylan Liew",
+    "address": {
+      "bunk": "Crystal",
+      "floor": 1,
+      "unit": 280
+    }
+  }
+}
+
+vars:pre-request {
+  uuid: 0c298314-85e4-40b7-af55-f3d308b4a80c
+}

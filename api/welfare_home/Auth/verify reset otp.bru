@@ -1,0 +1,22 @@
+meta {
+  name: verify reset otp
+  type: http
+  seq: 8
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/password-reset/otp
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "session_uid": "{{session_uuid}}",
+    "otp": "447228"
+  }
+}
+
+vars:post-response {
+  reset_token: res.body.reset_token
+}

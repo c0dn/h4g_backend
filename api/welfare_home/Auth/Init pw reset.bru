@@ -1,0 +1,21 @@
+meta {
+  name: Init pw reset
+  type: http
+  seq: 7
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/password-reset
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "phone": "89371827"
+  }
+}
+
+vars:post-response {
+  session_uuid: res.body.session_uid
+}

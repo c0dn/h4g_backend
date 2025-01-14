@@ -1,0 +1,22 @@
+meta {
+  name: finish pw reset
+  type: http
+  seq: 9
+}
+
+post {
+  url: https://h4g.homelan.cc/auth/password-reset/{{session_uuid}}?token={{reset_token}}
+  body: json
+  auth: none
+}
+
+params:query {
+  token: {{reset_token}}
+}
+
+body:json {
+  {
+    "password": "password12345",
+    "confirm_password": "password12345"
+  }
+}

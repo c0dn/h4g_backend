@@ -1,4 +1,5 @@
 use crate::models::products::Product;
+use crate::req_res::products::SearchParams;
 use crate::req_res::AppError;
 use crate::AppState;
 use axum::extract::{Query, State};
@@ -11,13 +12,15 @@ use diesel_async::RunQueryDsl;
 use diesel_full_text_search::{websearch_to_tsquery, TsVectorExtensions};
 use std::sync::Arc;
 use uuid::Uuid as UuidType;
-use crate::req_res::products::SearchParams;
 
 pub fn get_routes() -> Router<Arc<AppState>> {
     Router::new().nest("/products/", Router::new().route("/", get(get_products)))
 }
 
-async fn get_products(State(state): State<Arc<AppState>>, Query(params): Query<SearchParams>) -> Result<impl IntoResponse, AppError> {
+async fn get_products(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<SearchParams>,
+) -> Result<impl IntoResponse, AppError> {
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
     use crate::schema::private::products::dsl::*;

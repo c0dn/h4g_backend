@@ -761,6 +761,7 @@ dependencies = [
  "diesel_derives",
  "itoa",
  "pq-sys",
+ "serde_json",
  "uuid",
 ]
 
@@ -1258,7 +1259,7 @@ dependencies = [
  "rmp",
  "rmp-serde",
  "serde",
- "sha2",
+ "serde_json",
  "socketioxide",
  "tokio",
  "tower 0.5.2",

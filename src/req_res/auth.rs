@@ -1,5 +1,5 @@
-use crate::helper::{get_searchable_hash, hash_password_phone};
-use crate::models::user::{AccountType, User};
+use crate::helper::hash_password;
+use crate::models::user::{AccountType, User, UserAddress};
 use crate::paseto::{generate_access_token, generate_refresh_token};
 use crate::regex;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
@@ -12,13 +12,13 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserAuthRequest {
-    pub username: String,
+    pub resident_id: String,
     pub password: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AppInitRequest {
-    pub username: String,
+    pub staff_id: String,
     pub email: String,
     pub phone: String,
     pub name: String,
@@ -54,20 +54,21 @@ pub struct PwResetOtpValidated {
 #[derive(Debug, Deserialize, Insertable, Clone)]
 #[diesel(table_name = private::users)]
 pub struct NewUser {
-    pub username: String,
+    pub resident_id: String,
     pub email: String,
     pub name: String,
     pub phone: String,
     pub password: String,
     pub role: AccountType,
     pub active: bool,
-    pub idx_phone: String,
+    pub dob: Option<String>,
+    pub address: Option<serde_json::Value>,
+    pub force_pw_change: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RedactedUser {
     pub uuid: String,
-    pub username: String,
     pub name: String,
     pub email: String,
     pub role: AccountType,
@@ -108,7 +109,6 @@ impl Into<RedactedUser> for User {
     fn into(self) -> RedactedUser {
         RedactedUser {
             uuid: self.uuid.to_string(),
-            username: self.username.clone(),
             name: self.name.clone(),
             email: self.email.clone(),
             role: self.role,
@@ -138,10 +138,10 @@ impl TryInto<NewUser> for AppInitRequest {
         let mut errors = vec![];
         let role: AccountType = AccountType::SuperAdmin;
         let re = regex!(r"^[a-zA-Z0-9_]+$");
-        if self.username.len() < 4 {
+        if self.staff_id.len() < 4 {
             errors.push("Username too short".to_string());
         }
-        if !re.is_match(&self.username) {
+        if !re.is_match(&self.staff_id) {
             errors.push("Username can only contain numbers, letters, and underscores".to_string());
         }
         if self.password != self.confirm_password {
@@ -155,14 +155,16 @@ impl TryInto<NewUser> for AppInitRequest {
         }
         if errors.is_empty() {
             Ok(NewUser {
-                username: self.username,
+                resident_id: self.staff_id,
                 email: self.email,
                 name: self.name,
-                phone: hash_password_phone(&self.phone)?,
-                password: hash_password_phone(&self.password)?,
+                phone: self.phone,
+                password: hash_password(&self.password)?,
                 role,
                 active: true,
-                idx_phone: get_searchable_hash(&self.phone),
+                dob: None,
+                address: None,
+                force_pw_change: false,
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

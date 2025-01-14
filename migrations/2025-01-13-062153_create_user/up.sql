@@ -1,5 +1,5 @@
 -- Your SQL goes here
-CREATE TYPE private.account_type AS ENUM ('user', 'admin', 'super_admin');
+CREATE TYPE private.account_type AS ENUM ('user', 'admin');
 
 CREATE TABLE private.users (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),

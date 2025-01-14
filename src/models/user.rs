@@ -9,7 +9,6 @@ pub enum AccountType {
     #[default]
     User,
     Admin,
-    SuperAdmin,
 }
 
 impl TryFrom<&str> for AccountType {
@@ -19,7 +18,6 @@ impl TryFrom<&str> for AccountType {
         match value {
             "Admin" => Ok(AccountType::Admin),
             "User" => Ok(AccountType::User),
-            "SuperAdmin" => Ok(AccountType::SuperAdmin),
             _ => Err(format!("Unknown role: {}", value)),
         }
     }

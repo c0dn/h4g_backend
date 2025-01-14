@@ -1,9 +1,6 @@
 p, authenticated_user, authenticated_group, (GET)|(PATCH)|(POST)|(DELETE)
 p, authenticated_staff, authenticated_group, (GET)|(PATCH)|(POST)|(DELETE)
-p, authenticated_manager, authenticated_group, (GET)|(PATCH)|(POST)|(DELETE)
 p, authenticated_staff, staff_restricted_group, (GET)|(PATCH)|(POST)|(DELETE)
-p, authenticated_manager, staff_restricted_group, (GET)|(PATCH)|(POST)|(DELETE)
-p, authenticated_manager, manager_restricted_group, (GET)|(PATCH)|(POST)|(DELETE)
 
 
 g3, /auth/*, publicAction
@@ -18,5 +15,4 @@ g2, /inventory/*, staff_restricted_group
 
 g, User, authenticated_user
 g, Admin, authenticated_staff
-g, SuperAdmin, authenticated_manager
 

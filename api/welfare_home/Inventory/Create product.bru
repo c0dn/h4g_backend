@@ -1,0 +1,29 @@
+meta {
+  name: Create product
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://h4g.homelan.cc/inventory/
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+    "title": "First Aid Kit",
+    "description": "Basic medical supplies for emergencies",
+    "stock": 50,
+    "cost": 2500
+  }
+}
+
+body:multipart-form {
+  product: {"title": "First Aid Kit","description": "Basic medical supplies for emergencies","stock": 50,"cost": 2500}
+  image: @file(C:\Users\user\Downloads\first-aid.jpg)
+}

@@ -4,16 +4,21 @@ use crate::req_res::AppError;
 use argon2::password_hash::rand_core::OsRng;
 use argon2::password_hash::SaltString;
 use argon2::{Algorithm, Argon2, Params, PasswordHash, PasswordHasher, PasswordVerifier, Version};
+use image::ImageFormat;
 use log::{debug, error};
 use pasetors::claims::{Claims, ClaimsValidationRules};
 use pasetors::keys::AsymmetricPublicKey;
 use pasetors::token::UntrustedToken;
 use pasetors::version4::V4;
 use pasetors::{public, Public};
+use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+use std::path::Path;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::proto::rr::RecordType;
 use trust_dns_resolver::AsyncResolver;
+use uuid::Uuid;
+use webp::Encoder;
 
 pub fn validate_token(token: &str) -> Option<(String, Claims)> {
     let (_, public_key) = get_private_public_keypair();
@@ -124,4 +129,40 @@ pub async fn is_bad_mail(email: &str) -> bool {
     } else {
         true
     }
+}
+
+pub async fn save_product_image(
+    image_data: &[u8],
+    product_title: &str,
+) -> Result<String, AppError> {
+    let upload_dir = Path::new("uploads/products");
+    tokio::fs::create_dir_all(upload_dir).await.map_err(|e| {
+        error!("Failed to create directory: {}", e);
+        AppError::internal_error("Fail to save product image".to_string())
+    })?;
+
+    let img = image::load_from_memory(image_data).map_err(|e| AppError::bad_request(None))?;
+
+    let random_suffix: String = thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(6)
+        .map(char::from)
+        .collect();
+
+    let filename = format!("{}_{}.webp", product_title, random_suffix);
+    let path = upload_dir.join(&filename);
+
+    let encoder = Encoder::from_image(&img).map_err(|e| {
+        error!("WebP encoding error: {}", e);
+        AppError::internal_error("Fail to save product image".to_string())
+    })?;
+
+    let webp_data = encoder.encode(75.0).to_vec();
+
+    tokio::fs::write(&path, webp_data).await.map_err(|e| {
+        error!("Fail to write image file: {}", e);
+        AppError::internal_error("Fail to save product image".to_string())
+    })?;
+
+    Ok(filename)
 }

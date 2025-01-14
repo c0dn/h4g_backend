@@ -14,6 +14,7 @@ pub mod private {
         private.products (uuid) {
             uuid -> Uuid,
             title -> Text,
+            image_path -> Text,
             description -> Text,
             stock -> Int4,
             cost -> Int4,
@@ -41,5 +42,8 @@ pub mod private {
         }
     }
 
-    diesel::allow_tables_to_appear_in_same_query!(products, users,);
+    diesel::allow_tables_to_appear_in_same_query!(
+        products,
+        users,
+    );
 }

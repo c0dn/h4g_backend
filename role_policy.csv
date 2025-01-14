@@ -8,10 +8,12 @@ p, authenticated_manager, manager_restricted_group, (GET)|(PATCH)|(POST)|(DELETE
 
 g3, /auth/*, publicAction
 g3, /ws/*, publicAction
+g3, /uploads/*, publicAction
 
 g2, /me/*, authenticated_group
 g2, /products/*, authenticated_group
 g2, /users/*, staff_restricted_group
+g2, /inventory/*, staff_restricted_group
 
 
 g, User, authenticated_user

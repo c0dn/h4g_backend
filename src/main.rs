@@ -18,6 +18,7 @@ use pasetors::paserk::FormatAsPaserk;
 use pasetors::version4::V4;
 use socketioxide::SocketIo;
 use std::sync::Arc;
+use axum::routing::get;
 use tokio::fs;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
@@ -27,6 +28,7 @@ use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
+use crate::endpoint::public::serve_upload;
 
 mod backend;
 mod endpoint;
@@ -189,6 +191,8 @@ async fn main() -> anyhow::Result<()> {
         .nest("/me", endpoint::me::get_scope())
         .merge(endpoint::users::get_routes())
         .merge(endpoint::products::get_routes())
+        .merge(endpoint::inventory::get_routes())
+        .route("/uploads/{*file}", get(serve_upload))
         .layer(ws_layer)
         .layer(service_layer)
         .with_state(app_state.clone());

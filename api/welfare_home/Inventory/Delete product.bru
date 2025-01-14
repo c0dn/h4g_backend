@@ -1,0 +1,26 @@
+meta {
+  name: Delete product
+  type: http
+  seq: 3
+}
+
+delete {
+  url: https://h4g.homelan.cc/inventory/{{uuid}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+      "stock": 53,
+      "cost": 2500
+  }
+}
+
+vars:pre-request {
+  uuid: 6ac39839-a0fd-457b-850c-2804719b6a76
+}

@@ -2,6 +2,7 @@
 CREATE TABLE private.products (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
+    image_path TEXT NOT NULL,
     description TEXT NOT NULL,
     stock INT4 NOT NULL,
     cost INT4 NOT NULL,

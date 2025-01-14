@@ -9,6 +9,7 @@ use uuid::Uuid;
 pub struct ProductDB {
     pub uuid: Uuid,
     pub title: String,
+    pub image_path: String,
     pub description: String,
     pub stock: i32,
     pub cost: i32,
@@ -20,6 +21,7 @@ pub struct ProductDB {
 pub struct Product {
     pub uuid: Uuid,
     pub title: String,
+    pub image_path: String,
     pub description: String,
     pub stock: i32,
     pub cost: i32,

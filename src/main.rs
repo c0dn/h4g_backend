@@ -188,6 +188,7 @@ async fn main() -> anyhow::Result<()> {
         .nest("/auth", endpoint::auth::get_scope())
         .nest("/me", endpoint::me::get_scope())
         .merge(endpoint::users::get_routes())
+        .merge(endpoint::products::get_routes())
         .layer(ws_layer)
         .layer(service_layer)
         .with_state(app_state.clone());

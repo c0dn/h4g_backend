@@ -760,6 +760,7 @@ dependencies = [
  "chrono",
  "diesel_derives",
  "itoa",
+ "pq-sys",
  "uuid",
 ]
 
@@ -801,6 +802,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "diesel_full_text_search"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e28f8f872592a5283c3876a85c230dab8ddcc093c83660b96830c272257d03c9"
+dependencies = [
+ "diesel",
 ]
 
 [[package]]
@@ -1236,6 +1246,7 @@ dependencies = [
  "diesel",
  "diesel-async",
  "diesel-derive-enum",
+ "diesel_full_text_search",
  "diesel_migrations",
  "dotenvy",
  "fred",
@@ -2175,6 +2186,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77957b295656769bb8ad2b6a6b09d897d94f05c41b069aede1fcdaa675eaea04"
 dependencies = [
  "zerocopy",
+]
+
+[[package]]
+name = "pq-sys"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6cc05d7ea95200187117196eee9edd0644424911821aeb28a18ce60ea0b8793"
+dependencies = [
+ "vcpkg",
 ]
 
 [[package]]
@@ -3531,6 +3551,12 @@ dependencies = [
  "sval_ref",
  "sval_serde",
 ]
+
+[[package]]
+name = "vcpkg"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
 name = "version_check"

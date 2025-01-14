@@ -9,6 +9,21 @@ pub mod private {
 
     diesel::table! {
         use diesel::sql_types::*;
+        use diesel_full_text_search::Tsvector;
+
+        private.products (uuid) {
+            uuid -> Uuid,
+            title -> Text,
+            description -> Text,
+            stock -> Int4,
+            cost -> Int4,
+            search_vector -> Tsvector,
+        }
+    }
+
+    diesel::table! {
+        use diesel::sql_types::*;
+        use diesel_full_text_search::Tsvector;
         use super::sql_types::AccountType;
 
         private.users (uuid) {
@@ -23,4 +38,6 @@ pub mod private {
             idx_phone -> Text,
         }
     }
+
+    diesel::allow_tables_to_appear_in_same_query!(products, users,);
 }

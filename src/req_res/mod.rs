@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod me;
 pub mod users;
+pub mod products;
 
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};

@@ -32,10 +32,10 @@ use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel_async::RunQueryDsl;
+use fred::prelude::KeysInterface;
 use log::{error, warn};
 use std::str::FromStr;
 use std::sync::Arc;
-use fred::prelude::KeysInterface;
 use uuid::Uuid;
 
 pub fn get_scope() -> Router<Arc<AppState>> {
@@ -193,22 +193,14 @@ async fn complete_pw_reset(
         Some(uuid) => {
             let hashed_password = hash_password_phone(&req.password)?;
 
-
             diesel::update(private::users::table)
                 .filter(private::users::uuid.eq(uuid))
                 .set(private::users::password.eq(hashed_password))
                 .execute(&mut conn)
-                .await
-                ?;
+                .await?;
 
-            Ok((
-                StatusCode::OK,
-                (),
-            ))
+            Ok((StatusCode::OK, ()))
         }
-        None => Ok((
-            StatusCode::BAD_REQUEST,
-            ()
-        )),
+        None => Ok((StatusCode::BAD_REQUEST, ())),
     }
 }

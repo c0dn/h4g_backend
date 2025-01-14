@@ -1,4 +1,4 @@
-use crate::models::user::AccountType;
+use crate::models::user::{AccountType, UserAddress};
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
 use crate::schema::private;
 use diesel::AsChangeset;
@@ -7,12 +7,13 @@ use serde::Deserialize;
 #[derive(Debug, AsChangeset)]
 #[diesel(table_name = private::users)]
 pub struct UpdateUser {
-    pub username: Option<String>,
+    pub resident_id: Option<String>,
     pub email: Option<String>,
     pub name: Option<String>,
     pub phone: Option<String>,
     pub role: Option<AccountType>,
-    pub idx_phone: Option<String>,
+    pub dob: Option<String>,
+    pub address: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

@@ -1,9 +1,7 @@
 use crate::backend::pw_reset::{
     new_password_reset_req, verify_password_reset_otp, verify_reset_token, PasswordResetReq,
 };
-use crate::helper::{
-    get_searchable_hash, hash_password_phone, is_bad_mail, validate_token, verify_password_phone,
-};
+use crate::helper::{hash_password, is_bad_mail, validate_token, verify_password};
 use crate::models::user::User;
 use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{
@@ -15,7 +13,7 @@ use crate::req_res::me::{PasswordChangeReq, PasswordChangeValidated};
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
 use crate::schema::private;
 use crate::schema::private::users::dsl::users;
-use crate::schema::private::users::username;
+use crate::schema::private::users::resident_id;
 use crate::schema::private::users::uuid as SqlUuid;
 use crate::utils::generate_otp;
 use crate::AppState;
@@ -32,7 +30,6 @@ use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::result::Error;
 use diesel_async::RunQueryDsl;
-use fred::prelude::KeysInterface;
 use log::{error, warn};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -56,13 +53,13 @@ async fn login(
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
     let user_result = users
-        .filter(username.eq(&payload.username))
+        .filter(resident_id.eq(&payload.resident_id))
         .first::<User>(&mut con)
         .await;
 
     match user_result {
         Ok(user) => {
-            verify_password_phone(&user.password, &payload.password)?;
+            verify_password(&user.password, &payload.password)?;
             let res: UserAuthenticationResponse = user.into();
             Ok((StatusCode::OK, Json(res)))
         }
@@ -135,14 +132,12 @@ async fn initiate_password_reset(
     let pool = &state.postgres_pool;
     let redis = &state.redis_client;
     let mut conn = pool.get().await?;
-    let searchable = get_searchable_hash(&payload.phone);
-    let user_vec: Vec<User> = private::users::table
-        .filter(private::users::idx_phone.eq(searchable))
+    let matched_user: Option<User> = private::users::table
+        .filter(private::users::phone.eq(&payload.phone))
         .filter(private::users::active.eq(true))
-        .load::<User>(&mut conn)
+        .first(&mut conn)
         .await
-        .optional()?
-        .unwrap_or_default();
+        .optional()?;
 
     let session_uid = Uuid::new_v4();
     let expire = Utc::now() + Duration::minutes(10);
@@ -153,16 +148,12 @@ async fn initiate_password_reset(
         otp_expiry: Some(expire),
     };
 
-    if let Some(matched_user) = user_vec
-        .into_iter()
-        .find(|user| verify_password_phone(&user.phone, &payload.phone).is_ok())
-    {
+    if let Some(matched_user) = matched_user {
         let otp = generate_otp();
         println!("pw reset otp: {}", &otp);
         new_password_reset_req(redis, session_uid, &otp, expire.clone(), matched_user.uuid).await?;
         Ok((StatusCode::OK, Json(res)))
     } else {
-        // TODO: Additional logging, possible credential stuffing detection?
         warn!("Invalid user");
         Ok((StatusCode::OK, Json(res)))
     }
@@ -191,7 +182,7 @@ async fn complete_pw_reset(
     let user_uuid = verify_reset_token(redis, uid, &params.token).await?;
     match user_uuid {
         Some(uuid) => {
-            let hashed_password = hash_password_phone(&req.password)?;
+            let hashed_password = hash_password(&req.password)?;
 
             diesel::update(private::users::table)
                 .filter(private::users::uuid.eq(uuid))

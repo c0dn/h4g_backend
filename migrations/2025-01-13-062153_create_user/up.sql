@@ -3,14 +3,15 @@ CREATE TYPE private.account_type AS ENUM ('user', 'admin', 'super_admin');
 
 CREATE TABLE private.users (
     uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username TEXT NOT NULL,
+    resident_id TEXT NOT NULL,
     name TEXT NOT NULL,
     phone TEXT NOT NULL,
     password TEXT NOT NULL,
     email TEXT NOT NULL,
     role private.account_type NOT NULL,
     active BOOL NOT NULL,
-    idx_phone TEXT NOT NULL
+    dob TEXT,
+    address JSONB
 );
 
-CREATE UNIQUE INDEX idx_users_username ON private.users (username);
+CREATE UNIQUE INDEX idx_users_resident_id ON private.users (resident_id);

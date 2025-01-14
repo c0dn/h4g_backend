@@ -11,7 +11,6 @@ use pasetors::token::UntrustedToken;
 use pasetors::version4::V4;
 use pasetors::{public, Public};
 use rand::{thread_rng, Rng};
-use sha2::{Digest, Sha256};
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::proto::rr::RecordType;
 use trust_dns_resolver::AsyncResolver;
@@ -27,7 +26,7 @@ pub fn validate_token(token: &str) -> Option<(String, Claims)> {
     Some((role.to_string(), claims.clone()))
 }
 
-pub fn hash_password_phone(password: &str) -> Result<String, AppError> {
+pub fn hash_password(password: &str) -> Result<String, AppError> {
     // Reference https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Password_Storage_Cheat_Sheet.md#argon2id
     let parameters = Params::new(19456, 2, 1, None).unwrap();
     let argon2 = Argon2::new(Algorithm::Argon2id, Version::V0x13, parameters);
@@ -42,15 +41,7 @@ pub fn hash_password_phone(password: &str) -> Result<String, AppError> {
     Ok(password_hash)
 }
 
-pub fn get_searchable_hash(payload: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(payload.as_bytes());
-    let result = hasher.finalize();
-    let hex = format!("{:x}", result);
-    hex.chars().skip(hex.len() - 8).collect()
-}
-
-pub fn verify_password_phone(hash: &str, password: &str) -> Result<(), AppError> {
+pub fn verify_password(hash: &str, password: &str) -> Result<(), AppError> {
     let parsed_hash = PasswordHash::new(&hash).map_err(|_| AppError::unauthorized())?;
     Argon2::default()
         .verify_password(password.as_bytes(), &parsed_hash)

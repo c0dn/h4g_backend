@@ -1,4 +1,4 @@
-use crate::helper::hash_password_phone;
+use crate::helper::hash_password;
 use crate::models::user::User;
 use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{NewUser, RedactedUser};
@@ -27,7 +27,7 @@ pub fn get_routes() -> Router<Arc<AppState>> {
         "/users/",
         Router::new()
             .route("/", get(get_users).post(create_user))
-            .route("/{id}", get(get_user).put(update_user).delete(delete_user))
+            .route("/{id}", get(get_user).patch(update_user).delete(delete_user))
             .route("/{id}/suspend", post(suspend_user))
             .route("/{id}/activate", post(unsuspend_user))
             .route("/{id}/reset-password", post(reset_password)),
@@ -77,7 +77,7 @@ async fn create_user(
     let mut con = pool.get().await?;
     let mut n_user: NewUser = payload.try_into()?;
     let random_password = generate_random_string();
-    n_user.password = hash_password_phone(&random_password)?;
+    n_user.password = hash_password(&random_password)?;
     let created_user = diesel::insert_into(private::users::table)
         .values(&n_user)
         .get_result::<User>(&mut con)
@@ -98,7 +98,7 @@ async fn update_user(
 
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
-    let user = diesel::update(private::users::table)
+    diesel::update(private::users::table)
         .filter(SqlUuid.eq(uid))
         .set(&update_user)
         .get_result::<User>(&mut con)
@@ -106,8 +106,7 @@ async fn update_user(
         .optional()
         .map_err(AppError::from)?
         .ok_or_else(|| AppError::not_found())?;
-    let redacted: RedactedUser = user.into();
-    Ok((StatusCode::OK, Json(redacted)))
+    Ok((StatusCode::OK, ()))
 }
 async fn delete_user(
     State(state): State<Arc<AppState>>,
@@ -156,7 +155,7 @@ async fn reset_password(
     }
 
     let random_password = generate_random_string();
-    let hashed_password = hash_password_phone(&random_password)?;
+    let hashed_password = hash_password(&random_password)?;
 
     let user = diesel::update(private::users::table)
         .filter(SqlUuid.eq(uid))

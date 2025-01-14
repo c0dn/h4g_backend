@@ -1,6 +1,5 @@
-use crate::helper::{get_searchable_hash, hash_password_phone};
-use crate::models::user::AccountType;
-use crate::regex;
+use crate::helper::hash_password;
+use crate::models::user::{AccountType, UserAddress};
 use crate::req_res::auth::NewUser;
 use crate::req_res::me::UpdateUser;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
@@ -8,20 +7,24 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AdminNewUserReq {
-    pub username: String,
+    pub resident_id: String,
     pub email: String,
     pub name: String,
     pub phone: String,
     pub role: AccountType,
+    pub address: Option<UserAddress>,
+    pub dob: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AdminUpdateUserReq {
-    pub username: Option<String>,
+    pub resident_id: Option<String>,
     pub email: Option<String>,
     pub name: Option<String>,
     pub phone: Option<String>,
     pub role: Option<AccountType>,
+    pub address: Option<UserAddress>,
+    pub dob: Option<String>,
 }
 
 impl TryInto<NewUser> for AdminNewUserReq {
@@ -29,26 +32,20 @@ impl TryInto<NewUser> for AdminNewUserReq {
 
     fn try_into(self) -> Result<NewUser, Self::Error> {
         let mut errors = vec![];
-        let re = regex!(r"^[a-zA-Z0-9_]+$");
-        if self.username.len() < 4 {
-            errors.push("Username too short".to_string());
-        }
-        if !re.is_match(&self.username) {
-            errors.push("Username can only contain numbers, letters, and underscores".to_string());
-        }
         if self.phone.len() != 8 {
             errors.push("Invalid Singapore phone number".to_string());
         }
         if errors.is_empty() {
             Ok(NewUser {
-                username: self.username,
+                resident_id: self.resident_id,
                 email: self.email,
                 name: self.name,
-                password: hash_password_phone("placeholder")?,
-                phone: hash_password_phone(&self.phone)?,
+                password: hash_password("placeholder")?,
+                phone: self.phone,
                 role: self.role,
                 active: true,
-                idx_phone: get_searchable_hash(&self.phone),
+                dob: self.dob,
+                address: self.address.map(|a| serde_json::to_value(&a).unwrap()),
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(
@@ -64,18 +61,6 @@ impl TryInto<UpdateUser> for AdminUpdateUserReq {
     fn try_into(self) -> Result<UpdateUser, Self::Error> {
         let mut errors = vec![];
 
-        if let Some(username) = &self.username {
-            let re = regex!(r"^[a-zA-Z0-9_]+$");
-            if username.len() < 4 {
-                errors.push("Username too short".to_string());
-            }
-            if !re.is_match(username) {
-                errors.push(
-                    "Username can only contain numbers, letters, and underscores".to_string(),
-                );
-            }
-        }
-
         if let Some(phone) = &self.phone {
             if phone.len() != 8 {
                 errors.push("Invalid Singapore phone number".to_string());
@@ -84,15 +69,13 @@ impl TryInto<UpdateUser> for AdminUpdateUserReq {
 
         if errors.is_empty() {
             Ok(UpdateUser {
-                username: self.username,
+                resident_id: self.resident_id,
                 email: self.email,
                 name: self.name,
-                phone: match self.phone {
-                    Some(ref p) => Some(hash_password_phone(p)?),
-                    None => None,
-                },
+                phone: self.phone,
                 role: self.role,
-                idx_phone: self.phone.as_ref().map(|p| get_searchable_hash(p)),
+                dob: self.dob,
+                address: self.address.map(|a| serde_json::to_value(&a).unwrap()),
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

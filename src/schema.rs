@@ -28,14 +28,15 @@ pub mod private {
 
         private.users (uuid) {
             uuid -> Uuid,
-            username -> Text,
+            resident_id -> Text,
             name -> Text,
             phone -> Text,
             password -> Text,
             email -> Text,
             role -> AccountType,
             active -> Bool,
-            idx_phone -> Text,
+            dob -> Nullable<Text>,
+            address -> Nullable<Jsonb>,
         }
     }
 

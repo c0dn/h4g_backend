@@ -1,0 +1,26 @@
+meta {
+  name: Update product
+  type: http
+  seq: 2
+}
+
+patch {
+  url: https://h4g.homelan.cc/inventory/{{uuid}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{access_token}}
+}
+
+body:json {
+  {
+      "stock": 53,
+      "cost": 2500
+  }
+}
+
+vars:pre-request {
+  uuid: 95484a6f-f3aa-42ee-acb6-ac254181a7e7
+}

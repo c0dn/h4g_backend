@@ -24,9 +24,15 @@ async fn get_products(
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
     use crate::schema::private::products::dsl::*;
-    let product_vec = products
+    let mut query = products
         .select((uuid, title, description, stock, cost))
-        .filter(search_vector.matches(websearch_to_tsquery(&params.q)))
+        .into_boxed();
+
+    if let Some(search_term) = &params.q {
+        query = query.filter(search_vector.matches(websearch_to_tsquery(search_term)));
+    }
+
+    let product_vec = query
         .get_results::<(UuidType, String, String, i32, i32)>(&mut con)
         .await?
         .into_iter()

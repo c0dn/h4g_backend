@@ -136,7 +136,7 @@ impl TryInto<NewUser> for AppInitRequest {
 
     fn try_into(self) -> Result<NewUser, Self::Error> {
         let mut errors = vec![];
-        let role: AccountType = AccountType::SuperAdmin;
+        let role: AccountType = AccountType::Admin;
         let re = regex!(r"^[a-zA-Z0-9_]+$");
         if self.staff_id.len() < 4 {
             errors.push("Username too short".to_string());

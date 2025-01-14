@@ -37,6 +37,7 @@ pub mod private {
             active -> Bool,
             dob -> Nullable<Text>,
             address -> Nullable<Jsonb>,
+            force_pw_change -> Bool,
         }
     }
 

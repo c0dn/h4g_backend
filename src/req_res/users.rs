@@ -46,6 +46,7 @@ impl TryInto<NewUser> for AdminNewUserReq {
                 active: true,
                 dob: self.dob,
                 address: self.address.map(|a| serde_json::to_value(&a).unwrap()),
+                force_pw_change: true,
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

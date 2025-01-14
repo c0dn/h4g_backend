@@ -11,7 +11,8 @@ CREATE TABLE private.users (
     role private.account_type NOT NULL,
     active BOOL NOT NULL,
     dob TEXT,
-    address JSONB
+    address JSONB,
+    force_pw_change BOOL NOT NULL
 );
 
 CREATE UNIQUE INDEX idx_users_resident_id ON private.users (resident_id);

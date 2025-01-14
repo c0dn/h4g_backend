@@ -186,7 +186,10 @@ async fn complete_pw_reset(
 
             diesel::update(private::users::table)
                 .filter(private::users::uuid.eq(uuid))
-                .set(private::users::password.eq(hashed_password))
+                .set((
+                    private::users::password.eq(hashed_password),
+                    private::users::force_pw_change.eq(false),
+                ))
                 .execute(&mut conn)
                 .await?;
 

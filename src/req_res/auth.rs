@@ -63,6 +63,7 @@ pub struct NewUser {
     pub active: bool,
     pub dob: Option<String>,
     pub address: Option<serde_json::Value>,
+    pub force_pw_change: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -163,6 +164,7 @@ impl TryInto<NewUser> for AppInitRequest {
                 active: true,
                 dob: None,
                 address: None,
+                force_pw_change: false,
             })
         } else {
             Err(AppError::bad_request::<ClientErrorMessages>(

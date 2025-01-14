@@ -27,7 +27,10 @@ pub fn get_routes() -> Router<Arc<AppState>> {
         "/users/",
         Router::new()
             .route("/", get(get_users).post(create_user))
-            .route("/{id}", get(get_user).patch(update_user).delete(delete_user))
+            .route(
+                "/{id}",
+                get(get_user).patch(update_user).delete(delete_user),
+            )
             .route("/{id}/suspend", post(suspend_user))
             .route("/{id}/activate", post(unsuspend_user))
             .route("/{id}/reset-password", post(reset_password)),

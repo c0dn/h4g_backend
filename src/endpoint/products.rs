@@ -25,7 +25,7 @@ async fn get_products(
     let mut con = pool.get().await?;
     use crate::schema::private::products::dsl::*;
     let mut query = products
-        .select((uuid, title, description, stock, cost))
+        .select((uuid, title, image_path, description, stock, cost))
         .into_boxed();
 
     if let Some(search_term) = &params.q {
@@ -33,12 +33,13 @@ async fn get_products(
     }
 
     let product_vec = query
-        .get_results::<(UuidType, String, String, i32, i32)>(&mut con)
+        .get_results::<(UuidType, String, String, String, i32, i32)>(&mut con)
         .await?
         .into_iter()
-        .map(|(uid, p_title, p_desc, p_stock, p_cost)| Product {
+        .map(|(uid, p_title, image_p, p_desc, p_stock, p_cost)| Product {
             uuid: uid,
             title: p_title,
+            image_path: image_p,
             description: p_desc,
             stock: p_stock,
             cost: p_cost,

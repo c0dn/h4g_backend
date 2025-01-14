@@ -6,7 +6,7 @@ meta {
 
 post {
   url: https://h4g.homelan.cc/inventory/
-  body: json
+  body: multipartForm
   auth: bearer
 }
 
@@ -16,9 +16,14 @@ auth:bearer {
 
 body:json {
   {
-      "title": "First Aid Kit",
-      "description": "Basic medical supplies for emergencies",
-      "stock": 50,
-      "cost": 2500
+    "title": "First Aid Kit",
+    "description": "Basic medical supplies for emergencies",
+    "stock": 50,
+    "cost": 2500
   }
+}
+
+body:multipart-form {
+  product: {"title": "First Aid Kit","description": "Basic medical supplies for emergencies","stock": 50,"cost": 2500}
+  image: @file(C:\Users\user\Downloads\first-aid.jpg)
 }

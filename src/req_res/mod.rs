@@ -1,8 +1,10 @@
 pub mod auth;
+pub mod inventory;
 pub mod me;
 pub mod products;
 pub mod users;
 
+use axum::extract::multipart::MultipartError;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
 use axum::Json;
@@ -122,5 +124,12 @@ impl From<RunError> for AppError {
     fn from(v: RunError) -> Self {
         error!("Diesel: {}", v.to_string());
         Self::internal_error("DB error".to_string())
+    }
+}
+
+impl From<MultipartError> for AppError {
+    fn from(value: MultipartError) -> Self {
+        error!("Error processing multipart request: {}", value);
+        Self::bad_request(None)
     }
 }

@@ -14,6 +14,7 @@ pub struct UpdateUser {
     pub role: Option<AccountType>,
     pub dob: Option<String>,
     pub address: Option<serde_json::Value>,
+    pub school: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]

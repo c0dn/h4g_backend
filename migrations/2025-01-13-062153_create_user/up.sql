@@ -12,6 +12,7 @@ CREATE TABLE private.users (
     active BOOL NOT NULL,
     dob TEXT,
     address JSONB,
+    school TEXT,
     force_pw_change BOOL NOT NULL
 );
 

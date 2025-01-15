@@ -43,5 +43,6 @@ pub struct User {
     pub active: bool,
     pub dob: Option<String>,
     pub address: Option<serde_json::Value>,
+    pub school: Option<String>,
     pub force_pw_change: bool,
 }

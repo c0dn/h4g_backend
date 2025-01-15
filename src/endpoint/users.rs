@@ -1,9 +1,10 @@
 use crate::helper::hash_password;
 use crate::models::user::User;
+use crate::models::wallet::Wallet;
 use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{NewUser, RedactedUser};
 use crate::req_res::me::UpdateUser;
-use crate::req_res::users::{AdminNewUserReq, AdminUpdateUserReq};
+use crate::req_res::users::{AdminNewUserReq, AdminUpdateUserReq, DetailedUser, DetailedUserFull};
 use crate::req_res::AppError;
 use crate::schema::private;
 use crate::schema::private::users::uuid as SqlUuid;
@@ -16,7 +17,8 @@ use axum::routing::{get, post};
 use axum::{Extension, Json, Router};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
+use diesel_async::scoped_futures::ScopedFutureExt;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use log::error;
 use pasetors::claims::Claims;
 use std::sync::Arc;
@@ -40,38 +42,42 @@ pub fn get_routes() -> Router<Arc<AppState>> {
 async fn get_users(State(state): State<Arc<AppState>>) -> Result<impl IntoResponse, AppError> {
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
-    let users_vec = private::users::table
-        .select(User::as_select())
-        .load::<User>(&mut con)
+
+    let users_with_wallets = private::users::table
+        .left_join(private::wallets::table)
+        .select((User::as_select(), Option::<Wallet>::as_select()))
+        .load::<(User, Option<Wallet>)>(&mut con)
         .await
         .map_err(AppError::from)?;
 
-    let redacted_vec = users_vec
+    let detailed_vec = users_with_wallets
         .into_iter()
-        .map(|u| u.into())
-        .collect::<Vec<RedactedUser>>();
+        .map(|tuple| tuple.into())
+        .collect::<Vec<DetailedUser>>();
 
-    Ok((StatusCode::OK, Json(redacted_vec)))
+    Ok((StatusCode::OK, Json(detailed_vec)))
 }
-
 async fn get_user(
     State(state): State<Arc<AppState>>,
     Path(uid): Path<Uuid>,
 ) -> Result<impl IntoResponse, AppError> {
     let pool = &state.postgres_pool;
     let mut con = pool.get().await?;
-    let user = private::users::table
+
+    let (user, wallet) = private::users::table
+        .left_join(private::wallets::table)
         .filter(SqlUuid.eq(uid))
-        .first::<User>(&mut con)
+        .select((User::as_select(), Option::<Wallet>::as_select()))
+        .first::<(User, Option<Wallet>)>(&mut con)
         .await
         .optional()
         .map_err(AppError::from)?
         .ok_or_else(|| AppError::not_found())?;
-    let redacted: RedactedUser = user.into();
 
-    Ok((StatusCode::OK, Json(redacted)))
+    let detailed: DetailedUserFull = (user, wallet).into();
+
+    Ok((StatusCode::OK, Json(detailed)))
 }
-
 async fn create_user(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<AdminNewUserReq>,
@@ -81,15 +87,33 @@ async fn create_user(
     let mut n_user: NewUser = payload.try_into()?;
     let random_password = generate_random_string();
     n_user.password = hash_password(&random_password)?;
-    let created_user = diesel::insert_into(private::users::table)
-        .values(&n_user)
-        .get_result::<User>(&mut con)
+    let (created_user, user_wallet) = con
+        .transaction(|conn| {
+            async move {
+                let user = diesel::insert_into(private::users::table)
+                    .values(&n_user)
+                    .get_result::<User>(conn)
+                    .await?;
+
+                let wallet = diesel::insert_into(private::wallets::table)
+                    .values((
+                        private::wallets::user_uuid.eq(user.uuid),
+                        private::wallets::balance.eq(0),
+                    ))
+                    .get_result::<Wallet>(conn)
+                    .await?;
+
+                Ok::<(User, Wallet), diesel::result::Error>((user, wallet))
+            }
+            .scope_boxed()
+        })
         .await
         .map_err(AppError::from)?;
-    let redacted: RedactedUser = created_user.into();
+
+    let detailed: DetailedUser = (created_user, Some(user_wallet)).into();
     //TODO: Send generated password via mail or text
     println!("created password: {}", random_password);
-    Ok((StatusCode::CREATED, Json(redacted)))
+    Ok((StatusCode::CREATED, Json(detailed)))
 }
 
 async fn update_user(

@@ -1,5 +1,5 @@
 use crate::helper::hash_password;
-use crate::models::user::User;
+use crate::models::user::{AccountType, User};
 use crate::models::wallet::Wallet;
 use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{NewUser, RedactedUser};
@@ -45,6 +45,7 @@ async fn get_users(State(state): State<Arc<AppState>>) -> Result<impl IntoRespon
 
     let users_with_wallets = private::users::table
         .left_join(private::wallets::table)
+        .filter(private::users::role.eq(AccountType::User))
         .select((User::as_select(), Option::<Wallet>::as_select()))
         .load::<(User, Option<Wallet>)>(&mut con)
         .await
@@ -184,9 +185,12 @@ async fn reset_password(
     let random_password = generate_random_string();
     let hashed_password = hash_password(&random_password)?;
 
-    let user = diesel::update(private::users::table)
+    diesel::update(private::users::table)
         .filter(SqlUuid.eq(uid))
-        .set(private::users::password.eq(hashed_password))
+        .set((
+            private::users::password.eq(hashed_password),
+            private::users::force_pw_change.eq(true),
+        ))
         .get_result::<User>(&mut con)
         .await
         .optional()

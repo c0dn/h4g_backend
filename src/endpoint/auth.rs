@@ -3,6 +3,7 @@ use crate::backend::pw_reset::{
 };
 use crate::helper::{hash_password, is_bad_mail, validate_token, verify_password};
 use crate::models::user::User;
+use crate::models::wallet::Wallet;
 use crate::paseto::AuthTokenClaims;
 use crate::req_res::auth::{
     AppInitRequest, NewTokens, NewUser, PasswordResetOtpReq, PasswordResetRequest,
@@ -29,7 +30,8 @@ use chrono::{Duration, Utc};
 use diesel::associations::HasTable;
 use diesel::prelude::*;
 use diesel::result::Error;
-use diesel_async::RunQueryDsl;
+use diesel_async::scoped_futures::ScopedFutureExt;
+use diesel_async::{AsyncConnection, RunQueryDsl};
 use log::{error, warn};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -102,13 +104,31 @@ async fn init_app(
             ))?
         } else {
             let n_user: NewUser = payload.try_into()?;
-            let created_user = diesel::insert_into(users::table())
-                .values(n_user)
-                .returning(User::as_returning())
-                .get_result(&mut conn)
-                .await?;
-            let res: UserAuthenticationResponse = created_user.into();
 
+            let (created_user, _wallet) = conn
+                .transaction(|conn| {
+                    async move {
+                        let user = diesel::insert_into(users::table())
+                            .values(n_user)
+                            .returning(User::as_returning())
+                            .get_result(conn)
+                            .await?;
+
+                        let wallet = diesel::insert_into(private::wallets::table)
+                            .values((
+                                private::wallets::user_uuid.eq(user.uuid),
+                                private::wallets::balance.eq(0),
+                            ))
+                            .get_result::<Wallet>(conn)
+                            .await?;
+
+                        Ok::<(User, Wallet), Error>((user, wallet))
+                    }
+                    .scope_boxed()
+                })
+                .await
+                .map_err(AppError::from)?;
+            let res: UserAuthenticationResponse = created_user.into();
             Ok((StatusCode::OK, Json(res)))
         }
     } else {

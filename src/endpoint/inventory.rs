@@ -12,9 +12,9 @@ use axum::{Json, Router};
 use bytes::Bytes;
 use diesel::ExpressionMethods;
 use diesel::OptionalExtension;
-use diesel_async::{RunQueryDsl};
+use diesel::QueryDsl;
+use diesel_async::RunQueryDsl;
 use std::sync::Arc;
-use diesel::{QueryDsl};
 use uuid::Uuid;
 
 pub fn get_routes() -> Router<Arc<AppState>> {

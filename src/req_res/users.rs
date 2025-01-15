@@ -1,9 +1,12 @@
 use crate::helper::hash_password;
-use crate::models::user::{AccountType, UserAddress};
+use crate::models::user::{AccountType, User, UserAddress};
+use crate::models::wallet::Wallet;
 use crate::req_res::auth::NewUser;
 use crate::req_res::me::UpdateUser;
 use crate::req_res::{AppError, ClientErrorMessages, DataValidationError};
-use serde::Deserialize;
+use num_traits::cast::ToPrimitive;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct AdminNewUserReq {
@@ -14,6 +17,7 @@ pub struct AdminNewUserReq {
     pub role: AccountType,
     pub address: Option<UserAddress>,
     pub dob: Option<String>,
+    pub school: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -25,6 +29,69 @@ pub struct AdminUpdateUserReq {
     pub role: Option<AccountType>,
     pub address: Option<UserAddress>,
     pub dob: Option<String>,
+    pub school: Option<String>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct DetailedUser {
+    pub uuid: Uuid,
+    pub resident_id: String,
+    pub email: String,
+    pub name: String,
+    pub phone: String,
+    pub balance: i32,
+    pub dob: String,
+    pub school: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct DetailedUserFull {
+    pub uuid: Uuid,
+    pub resident_id: String,
+    pub email: String,
+    pub name: String,
+    pub phone: String,
+    pub balance: i32,
+    pub dob: String,
+    pub school: String,
+    pub address: Option<UserAddress>,
+    pub role: AccountType,
+}
+
+impl From<(User, Option<Wallet>)> for DetailedUser {
+    fn from((user, wallet): (User, Option<Wallet>)) -> DetailedUser {
+        DetailedUser {
+            uuid: user.uuid,
+            resident_id: user.resident_id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone,
+            balance: wallet.map(|w| w.balance.to_i32().unwrap_or(0)).unwrap_or(0),
+            dob: user.dob.unwrap_or("Not specified".to_string()),
+            school: user.school.unwrap_or("Not schooling".to_string()),
+        }
+    }
+}
+
+impl From<(User, Option<Wallet>)> for DetailedUserFull {
+    fn from((user, wallet): (User, Option<Wallet>)) -> DetailedUserFull {
+        let address_value = user
+            .address
+            .and_then(|addr| serde_json::from_value::<UserAddress>(addr).ok());
+
+        DetailedUserFull {
+            uuid: user.uuid,
+            resident_id: user.resident_id,
+            email: user.email,
+            name: user.name,
+            phone: user.phone,
+            balance: wallet.map(|w| w.balance.to_i32().unwrap_or(0)).unwrap_or(0),
+            dob: user.dob.unwrap_or("Not specified".to_string()),
+            school: user.school.unwrap_or("Not schooling".to_string()),
+            address: address_value,
+            role: user.role,
+        }
+    }
 }
 
 impl TryInto<NewUser> for AdminNewUserReq {
@@ -46,6 +113,7 @@ impl TryInto<NewUser> for AdminNewUserReq {
                 active: true,
                 dob: self.dob,
                 address: self.address.map(|a| serde_json::to_value(&a).unwrap()),
+                school: self.school,
                 force_pw_change: true,
             })
         } else {
@@ -76,6 +144,7 @@ impl TryInto<UpdateUser> for AdminUpdateUserReq {
                 phone: self.phone,
                 role: self.role,
                 dob: self.dob,
+                school: self.school,
                 address: self.address.map(|a| serde_json::to_value(&a).unwrap()),
             })
         } else {

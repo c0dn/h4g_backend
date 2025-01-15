@@ -63,6 +63,7 @@ pub struct NewUser {
     pub active: bool,
     pub dob: Option<String>,
     pub address: Option<serde_json::Value>,
+    pub school: Option<String>,
     pub force_pw_change: bool,
 }
 
@@ -164,6 +165,7 @@ impl TryInto<NewUser> for AppInitRequest {
                 active: true,
                 dob: None,
                 address: None,
+                school: None,
                 force_pw_change: false,
             })
         } else {

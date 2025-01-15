@@ -1,16 +1,15 @@
 use crate::req_res::AppError;
+use axum::body::Body;
 use axum::{
     extract::Path,
     http::{header, HeaderMap, StatusCode},
     response::IntoResponse,
 };
 use std::path::PathBuf;
-use axum::body::Body;
 use tokio::fs::File;
-use tokio::io::AsyncReadExt;
 
 pub async fn serve_upload(Path(file_path): Path<String>) -> Result<impl IntoResponse, AppError> {
-        if file_path.contains("..") || file_path.starts_with('/') || file_path.contains('\\') {
+    if file_path.contains("..") || file_path.starts_with('/') || file_path.contains('\\') {
         return Err(AppError::forbidden());
     }
 
@@ -20,8 +19,7 @@ pub async fn serve_upload(Path(file_path): Path<String>) -> Result<impl IntoResp
 
     let path = uploads_dir.join(file_path);
 
-    let canonical_path = path.canonicalize()
-        .map_err(|_| AppError::not_found())?;
+    let canonical_path = path.canonicalize().map_err(|_| AppError::not_found())?;
 
     if !canonical_path.starts_with(&uploads_dir) {
         return Err(AppError::forbidden());

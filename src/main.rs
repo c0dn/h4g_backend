@@ -1,6 +1,8 @@
+use crate::endpoint::public::serve_upload;
 use crate::middleware::authentication_middleware;
 use axum::http::header::{AUTHORIZATION, CONTENT_TYPE};
 use axum::http::Method;
+use axum::routing::get;
 use axum::Router;
 use axum_casbin::casbin::function_map::key_match2;
 use axum_casbin::casbin::{CoreApi, DefaultModel, FileAdapter};
@@ -18,7 +20,6 @@ use pasetors::paserk::FormatAsPaserk;
 use pasetors::version4::V4;
 use socketioxide::SocketIo;
 use std::sync::Arc;
-use axum::routing::get;
 use tokio::fs;
 use tower::ServiceBuilder;
 use tower_http::compression::CompressionLayer;
@@ -28,7 +29,6 @@ use tower_http::normalize_path::NormalizePathLayer;
 use tower_http::trace::TraceLayer;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::endpoint::public::serve_upload;
 
 mod backend;
 mod endpoint;

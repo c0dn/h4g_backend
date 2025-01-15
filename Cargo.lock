@@ -1431,6 +1431,7 @@ dependencies = [
  "serde_json",
  "socketioxide",
  "tokio",
+ "tokio-util",
  "tower 0.5.2",
  "tower-http",
  "tracing-subscriber",

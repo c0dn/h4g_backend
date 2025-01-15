@@ -12,8 +12,9 @@ use axum::{Json, Router};
 use bytes::Bytes;
 use diesel::ExpressionMethods;
 use diesel::OptionalExtension;
-use diesel_async::RunQueryDsl;
+use diesel_async::{RunQueryDsl};
 use std::sync::Arc;
+use diesel::{QueryDsl};
 use uuid::Uuid;
 
 pub fn get_routes() -> Router<Arc<AppState>> {
@@ -21,7 +22,8 @@ pub fn get_routes() -> Router<Arc<AppState>> {
         "/inventory/",
         Router::new()
             .route("/", post(create_product))
-            .route("/{uid}", patch(update_product).delete(delete_product)),
+            .route("/{uid}", patch(update_product).delete(delete_product))
+            .route("/{uid}/image", patch(update_product_image)),
     )
 }
 
@@ -121,6 +123,45 @@ async fn update_product(
     };
 
     Ok((StatusCode::OK, Json(product)))
+}
+
+async fn update_product_image(
+    State(state): State<Arc<AppState>>,
+    Path(uid): Path<Uuid>,
+    mut multipart: Multipart,
+) -> Result<impl IntoResponse, AppError> {
+    let pool = &state.postgres_pool;
+    let mut con = pool.get().await?;
+
+    let product = private::products::table
+        .filter(private::products::uuid.eq(uid))
+        .select(private::products::title)
+        .first::<String>(&mut con)
+        .await
+        .optional()?
+        .ok_or_else(|| AppError::not_found())?;
+
+    let mut image_data: Option<Bytes> = None;
+    while let Some(field) = multipart.next_field().await.map_err(AppError::from)? {
+        if field.name().unwrap_or_default() == "image" {
+            image_data = Some(field.bytes().await.map_err(AppError::from)?);
+            break;
+        }
+    }
+
+    let image_data = image_data.ok_or_else(|| AppError::bad_request(None))?;
+
+    let img_path = save_product_image(&*image_data, &product).await?;
+    let img_path = format!("uploads/products/{}", img_path);
+
+    diesel::update(private::products::table)
+        .filter(private::products::uuid.eq(uid))
+        .set(private::products::image_path.eq(&img_path))
+        .execute(&mut con)
+        .await
+        .map_err(AppError::from)?;
+
+    Ok((StatusCode::OK, ()))
 }
 
 async fn delete_product(

@@ -159,16 +159,17 @@ async fn main() -> anyhow::Result<()> {
 
     let origins = if config.dev_mode {
         warn!("IN DEV mode, origins CORS different");
-        ["https://mini.vezuwares.com".parse()?]
+        ["https://mwhdemo.homelan.cc".parse()?, "http://localhost:9517".parse()?]
     } else {
-        ["https://mini.vezu.io".parse()?]
+        ["https://mwhdemo.homelan.cc".parse()?, "http://localhost:9517".parse()?]
     };
 
     let cors_layer = CorsLayer::new()
+        .allow_origin(origins)
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS, Method::PATCH])
         .allow_credentials(true)
-        .allow_headers([CONTENT_TYPE, AUTHORIZATION])
-        .allow_origin(origins);
+        .allow_headers([CONTENT_TYPE, AUTHORIZATION]);
+
 
     let (ws_layer, io) = SocketIo::builder()
         .req_path("/ws")

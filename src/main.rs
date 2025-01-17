@@ -159,9 +159,9 @@ async fn main() -> anyhow::Result<()> {
 
     let origins = if config.dev_mode {
         warn!("IN DEV mode, origins CORS different");
-        ["https://mwhdemo.homelan.cc".parse()?, "http://localhost:9517".parse()?]
+        ["https://mwh.homelan.cc".parse()?, "http://localhost:9517".parse()?]
     } else {
-        ["https://mwhdemo.homelan.cc".parse()?, "http://localhost:9517".parse()?]
+        ["https://mwh.homelan.cc".parse()?, "http://localhost:9517".parse()?]
     };
 
     let cors_layer = CorsLayer::new()
